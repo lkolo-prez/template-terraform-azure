@@ -148,7 +148,7 @@ jobs:
             --format json --out-file infracost-${{ matrix.environment }}.json || true
 
       - name: Sticky plan comment
-        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
         with:
           header: terraform-plan-${{ matrix.environment }}
           message: |
