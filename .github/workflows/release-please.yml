@@ -88,7 +88,7 @@ jobs:
           subject-path: modules-bundle.tar.gz
 
       - name: Attach artifacts to the release
-        uses: softprops/action-gh-release@01570a1f39cb168c169c802c3bceb9e93fb10974 # v2.1.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: |
