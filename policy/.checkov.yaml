@@ -1,0 +1,34 @@
+# Checkov configuration for Terraform IaC scanning.
+# Run: checkov --config-file policy/.checkov.yaml -d .
+framework:
+  - terraform
+  - terraform_plan
+
+# Fail the build on any HIGH/CRITICAL finding.
+hard-fail-on:
+  - HIGH
+  - CRITICAL
+
+compact: true
+quiet: true
+download-external-modules: false
+evaluate-variables: true
+
+# Output SARIF + CLI so CI can upload to GitHub code scanning.
+output:
+  - cli
+  - sarif
+output-file-path: console,checkov.sarif
+
+# Directories that are not infrastructure.
+skip-path:
+  - .terraform
+  - policy/rego
+  - docs
+
+# Documented, reviewed suppressions. Each skip references a checkov ID and the
+# reason it is acceptable for this template.
+skip-check:
+  # CKV_AZURE_141: AKS local accounts - we DO disable them, but checkov flags the
+  # AAD block shape in azurerm 4.x; enforced instead by our conftest policy.
+  - CKV2_AZURE_1

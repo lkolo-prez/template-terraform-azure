@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/aircloud/template-terraform-azure/security/advisories/new
+    about: Report security issues privately via GitHub Security Advisories. Do NOT open a public issue.
+  - name: Platform engineering discussions
+    url: https://github.com/aircloud/template-terraform-azure/discussions
+    about: Questions, ideas and design discussions.

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "schedule:weekly"
+  ],
+  "timezone": "Europe/Warsaw",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 10,
+  "rangeStrategy": "bump",
+  "terraform": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Pin all GitHub Actions to digests and group minor/patch bumps.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "groupName": "github-actions",
+      "matchUpdateTypes": ["minor", "patch", "digest"]
+    },
+    {
+      "description": "Require manual review for azurerm provider major upgrades.",
+      "matchManagers": ["terraform"],
+      "matchPackageNames": ["hashicorp/azurerm"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Pin Terraform core minor versions; review majors.",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_version"],
+      "enabled": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": false
+  }
+}

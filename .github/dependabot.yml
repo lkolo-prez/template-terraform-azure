@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Keep all pinned GitHub Actions SHAs current (Dependabot rewrites the SHA and
+  # the trailing version comment together).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "ci"
+      include: scope
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Terraform providers / modules across every Terraform directory.
+  - package-ecosystem: terraform
+    directories:
+      - /modules/network
+      - /modules/aks
+      - /modules/identity
+      - /modules/keyvault
+      - /modules/acr
+      - /modules/observability
+      - /environments/dev
+      - /environments/staging
+      - /environments/prod
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - terraform
+    commit-message:
+      prefix: "build"
+      include: scope

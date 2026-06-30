@@ -1,0 +1,102 @@
+# Taskfile for template-terraform-azure (https://taskfile.dev).
+# Install: https://taskfile.dev/installation/  (go-task >= 3.38)
+#
+# These are the canonical local commands. CI runs the same tools (see
+# .github/workflows/terraform-plan.yml and ci.yml). All Azure calls authenticate
+# with `az login` locally and with GitHub OIDC in CI — never with client secrets.
+version: "3"
+
+vars:
+  ENV: '{{.ENV | default "dev"}}'
+  TFLINT_CONFIG: '{{.ROOT_DIR}}/policy/.tflint.hcl'
+  CHECKOV_CONFIG: '{{.ROOT_DIR}}/policy/.checkov.yaml'
+  TFSEC_CONFIG: '{{.ROOT_DIR}}/policy/tfsec.yaml'
+  ENV_DIR: 'environments/{{.ENV}}'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: Install pre-commit hooks and verify tool versions
+    cmds:
+      - pre-commit install --install-hooks
+      - terraform version
+      - tflint --version
+      - checkov --version || true
+      - conftest --version || true
+      - 'echo "Toolchain ready. Run: task plan ENV=dev"'
+
+  format:
+    desc: Format all Terraform files in place
+    cmds:
+      - terraform fmt -recursive
+
+  fmt-check:
+    desc: Check Terraform formatting (CI gate)
+    cmds:
+      - terraform fmt -check -recursive
+
+  validate:
+    desc: 'terraform validate for one environment (ENV=dev|staging|prod)'
+    cmds:
+      - terraform -chdir={{.ENV_DIR}} init -backend=false -input=false
+      - terraform -chdir={{.ENV_DIR}} validate -no-color
+
+  lint:
+    desc: Run tflint across the whole tree
+    cmds:
+      - tflint --init --config "{{.TFLINT_CONFIG}}"
+      - tflint --recursive --config "{{.TFLINT_CONFIG}}" --format compact
+
+  docs:
+    desc: Regenerate terraform-docs for every module
+    cmds:
+      - terraform-docs --config .terraform-docs.yml ./modules/network
+      - terraform-docs --config .terraform-docs.yml ./modules/aks
+      - terraform-docs --config .terraform-docs.yml ./modules/identity
+      - terraform-docs --config .terraform-docs.yml ./modules/keyvault
+      - terraform-docs --config .terraform-docs.yml ./modules/acr
+      - terraform-docs --config .terraform-docs.yml ./modules/observability
+
+  security:
+    desc: Run the full static guardrail suite (tflint, tfsec/Trivy, checkov, conftest)
+    cmds:
+      - tflint --recursive --config "{{.TFLINT_CONFIG}}"
+      - trivy config --config "{{.TFSEC_CONFIG}}" .
+      - checkov --config-file "{{.CHECKOV_CONFIG}}" -d .
+      - conftest verify --policy policy/rego
+
+  test:
+    desc: Run the rego policy unit tests
+    cmds:
+      - conftest verify --policy policy/rego
+
+  plan:
+    desc: 'terraform plan for one environment (ENV=dev|staging|prod). Uses your az login.'
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
+    cmds:
+      - terraform -chdir={{.ENV_DIR}} init -input=false
+      - terraform -chdir={{.ENV_DIR}} plan -input=false -lock-timeout=120s -out=plan.tfplan
+      - terraform -chdir={{.ENV_DIR}} show -json plan.tfplan > {{.ENV_DIR}}/plan.json
+      - conftest test --policy policy/rego {{.ENV_DIR}}/plan.json
+
+  apply:
+    desc: 'terraform apply for one environment (prefer CI/merge; local is for break-glass)'
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
+    cmds:
+      - terraform -chdir={{.ENV_DIR}} apply -input=false -lock-timeout=120s plan.tfplan
+
+  clean:
+    desc: Remove local Terraform working files (never the remote state)
+    cmds:
+      - find . -type d -name ".terraform" -prune -exec rm -rf {} +
+      - find . -type f -name "*.tfplan" -delete
+      - find . -type f -name "plan.json" -delete

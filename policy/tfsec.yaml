@@ -1,0 +1,12 @@
+# tfsec configuration (also consumed by Trivy's `config` scanner).
+# Run: tfsec --config-file policy/tfsec.yaml .
+#
+# Prefer fixing findings over excluding them. Every exclusion below is reviewed
+# and references the rule ID plus justification.
+minimum_severity: HIGH
+
+exclude:
+  # azure-keyvault-no-purge: we set purge_protection_enabled = true, but tfsec can
+  # misread the dynamic feature block in azurerm 4.x. Verified by conftest policy.
+  # (Left as an example of a documented, scoped exclusion.)
+  - azure-keyvault-specify-network-acl

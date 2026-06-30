@@ -1,0 +1,16 @@
+# Code ownership. Required reviewers are enforced by the GitHub Ruleset
+# (see docs/BRANCH-PROTECTION.md). Teams must exist in the aircloud org.
+
+# Default owners for everything in the repo.
+*                           @aircloud/platform-engineering
+
+# Security-sensitive areas need the security team too.
+/policy/                    @aircloud/platform-engineering @aircloud/security
+/bootstrap/                 @aircloud/platform-engineering @aircloud/security
+/modules/identity/          @aircloud/platform-engineering @aircloud/security
+/modules/keyvault/          @aircloud/platform-engineering @aircloud/security
+/.github/workflows/         @aircloud/platform-engineering @aircloud/security
+SECURITY.md                 @aircloud/security
+
+# Production environment changes require platform leads.
+/environments/prod/         @aircloud/platform-engineering @aircloud/platform-leads

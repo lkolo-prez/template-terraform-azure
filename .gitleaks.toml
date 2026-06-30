@@ -1,0 +1,48 @@
+# gitleaks configuration for template-terraform-azure.
+# Consumed by .github/workflows/gitleaks.yml (GITLEAKS_CONFIG) and the pre-commit hook.
+#
+# Extends the built-in ruleset and adds Azure/Terraform-specific rules. This repo is
+# keyless by design (GitHub OIDC), so any real credential here is a defect.
+title = "template-terraform-azure gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "azure-storage-account-key"
+description = "Azure Storage account access key (base64, 88 chars)"
+regex = '''(?i)(account[_-]?key|storage[_-]?key|AccountKey)\s*[:=]\s*['\"]?[A-Za-z0-9+/]{86}==['\"]?'''
+tags = ["azure", "storage", "key"]
+
+[[rules]]
+id = "azure-storage-connection-string"
+description = "Azure Storage connection string"
+regex = '''DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+'''
+tags = ["azure", "storage", "connection-string"]
+
+[[rules]]
+id = "azure-sp-client-secret"
+description = "Azure service principal client secret in ARM/Terraform env vars"
+regex = '''(?i)(ARM_CLIENT_SECRET|client[_-]?secret)\s*[:=]\s*['\"]?[A-Za-z0-9~._-]{30,}['\"]?'''
+tags = ["azure", "service-principal", "secret"]
+
+[allowlist]
+description = "Known-safe placeholders and example identifiers"
+# All-zero/all-one GUIDs and example domains used in *.example and docs.
+regexes = [
+  '''00000000-0000-0000-0000-000000000000''',
+  '''11111111-1111-1111-1111-111111111111''',
+  '''@aircloud\.com\.pl''',
+  '''AzureADTokenExchange''',
+]
+paths = [
+  '''.*\.tfvars\.example$''',
+  '''(^|/)README\.md$''',
+  '''(^|/)docs/.*\.md$''',
+  '''(^|/)\.gitleaks\.toml$''',
+]
+# Federated-credential subjects / OIDC strings are identifiers, not secrets.
+stopwords = [
+  "token.actions.githubusercontent.com",
+  "api://AzureADTokenExchange",
+]

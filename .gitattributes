@@ -1,0 +1,29 @@
+# Normalize line endings to LF across platforms.
+* text=auto eol=lf
+
+# Explicit text types.
+*.tf       text eol=lf
+*.tfvars   text eol=lf
+*.hcl      text eol=lf
+*.rego     text eol=lf
+*.sh       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+
+# The provider dependency lock is committed and machine-generated: treat as
+# generated so diffs are collapsed in review but it stays version-controlled.
+*.terraform.lock.hcl linguist-generated=true
+
+# Generated terraform-docs tables inside module READMEs.
+modules/*/README.md linguist-generated=false
+
+# Binaries / archives.
+*.png      binary
+*.jpg      binary
+*.gz       binary
+*.zip      binary
+
+# Keep the repo language stats focused on Terraform.
+docs/**    linguist-documentation=true

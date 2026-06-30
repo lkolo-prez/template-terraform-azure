@@ -1,0 +1,44 @@
+{
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.eol": "\n",
+
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[terraform-vars]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2
+  },
+
+  "terraform.validation.enableEnhancedValidation": true,
+  "terraform.languageServer.enable": true,
+  "terraform.languageServer.indexing": {
+    "ignorePaths": [".terraform", "**/.terraform"]
+  },
+
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+
+  "// secrets-hygiene": "Never open or commit *.tfvars (except *.example) or *.tfstate; they are gitignored.",
+  "files.exclude": {
+    "**/.terraform": true
+  },
+  "files.watcherExclude": {
+    "**/.terraform/**": true
+  },
+
+  "files.associations": {
+    "*.tfvars.example": "terraform-vars",
+    "Taskfile.yml": "yaml"
+  }
+}

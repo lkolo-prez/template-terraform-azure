@@ -1,0 +1,59 @@
+---
+description: Project-wide rules for template-terraform-azure (security-first Azure IaC).
+globs:
+  - "**/*.tf"
+  - "**/*.tfvars.example"
+  - ".github/workflows/*.yml"
+  - "policy/**"
+  - "bootstrap/**"
+alwaysApply: true
+---
+
+# template-terraform-azure — Cursor project rules
+
+Security-first **Azure Infrastructure-as-Code**: private AKS (Workload Identity, Azure
+RBAC), RBAC Key Vault, private ACR, identity/OIDC plumbing, observability. All Azure
+access is via **GitHub Actions OIDC** — **no long-lived cloud secrets**. Mirrors
+`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`.
+
+- Terraform **>= 1.9** (CI pins **1.9.8**); `hashicorp/azurerm` **~> 4.21**,
+  `hashicorp/azuread` **~> 3.1**.
+- Placeholders: org/prefix `aircloud`, region `westeurope`.
+- Layout: `modules/{network,aks,identity,keyvault,acr,observability}`,
+  `environments/{dev,staging,prod}`, `policy/`, `bootstrap/`, `.github/workflows/`.
+
+## Must
+
+- **Keyless Azure auth only**: `azure/login` + OIDC (`ARM_USE_OIDC=true`,
+  `ARM_USE_AZUREAD=true`). `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_SUBSCRIPTION_ID`
+  are GitHub **variables** (`vars.*`), not secrets.
+- Remote state in Azure Storage with AAD auth (`use_azuread_auth = true`,
+  `use_oidc = true`); no access keys / connection strings.
+- Pin every GitHub Action to a **40-hex commit SHA** + `# vX.Y.Z` comment (never `@v4`/
+  `@main`); `step-security/harden-runner` first; least-privilege `permissions`;
+  `concurrency` set.
+- snake_case identifiers; document every `variable` and `output`; run `task docs` after
+  module variable/output changes.
+- **Conventional Commits**; signed/verified commits (see `docs/BRANCH-PROTECTION.md`).
+- Document every tfsec/checkov/conftest suppression inline with rule ID + reason.
+
+## Must not
+
+- No `client_secret`, SP password, storage access key, or connection string — anywhere.
+- Never commit `*.tfstate*` or real `*.tfvars` (only `*.tfvars.example`).
+- Never apply Terraform from a PR or skip the GitHub Environment approval gate (apply runs
+  on merge to `main`, gated on staging/prod).
+- Never weaken: private AKS API, RBAC-only Key Vault + purge protection, ACR
+  `admin_user = false`, deny-by-default NSGs.
+
+## Commands (match CI)
+
+```bash
+task setup            # hooks + tool versions
+task format           # terraform fmt -recursive
+task validate ENV=dev # init -backend=false + validate
+task lint             # tflint --config policy/.tflint.hcl
+task security         # tflint + trivy/tfsec + checkov + conftest
+task docs             # terraform-docs for all modules
+task plan ENV=dev     # init + plan + conftest test (local az login)
+```

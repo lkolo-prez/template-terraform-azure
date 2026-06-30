@@ -1,0 +1,83 @@
+# ---------------------------------------------------------------------------
+# Terraform
+# ---------------------------------------------------------------------------
+# Local working directories and provider plugins.
+**/.terraform/*
+.terraform/
+
+# State files and backups MUST NEVER be committed (remote state lives in Azure
+# Storage). State can contain secrets in plaintext.
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash logs and override files.
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Saved plans and rendered plan JSON (may contain sensitive values).
+*.tfplan
+plan.json
+plan.txt
+*.tfplan.json
+
+# Sensitive variable files. Commit ONLY *.tfvars.example / *.tfvars.json.example.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+*.auto.tfvars
+*.auto.tfvars.json
+
+# CLI config that may carry credentials.
+.terraformrc
+terraform.rc
+
+# NOTE on the dependency lock file: `.terraform.lock.hcl` SHOULD be committed
+# (it pins provider versions/hashes for reproducible, supply-chain-safe runs).
+# It is intentionally NOT ignored here. Do not add it to this file.
+
+# ---------------------------------------------------------------------------
+# Scanners / tooling output
+# ---------------------------------------------------------------------------
+*.sarif
+checkov.sarif
+results.sarif
+semgrep.sarif
+trivy-*.sarif
+infracost-*.json
+sbom.cdx.json
+modules-bundle.*
+
+# ---------------------------------------------------------------------------
+# Secrets / credentials (defense in depth — never commit these)
+# ---------------------------------------------------------------------------
+*.pem
+*.key
+*.pfx
+*.p12
+azureauth.json
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Editors / OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+*.iml
+
+# Keep shared .vscode config (extensions.json, settings.json); ignore personal files.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json

@@ -1,0 +1,18 @@
+{
+  "// note": "Recommended extensions for template-terraform-azure. VS Code will prompt to install these.",
+  "recommendations": [
+    "hashicorp.terraform",
+    "ms-azuretools.vscode-azureterraform",
+    "ms-azuretools.vscode-azureresourcegroups",
+    "ms-vscode.azurecli",
+    "tfsec.tfsec",
+    "bridgecrew.checkov",
+    "redhat.vscode-yaml",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "task.vscode-task",
+    "open-policy-agent.opa",
+    "ms-vscode-remote.remote-containers"
+  ],
+  "unwantedRecommendations": []
+}

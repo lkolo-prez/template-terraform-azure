@@ -1,0 +1,172 @@
+name: terraform-plan
+
+on:
+  pull_request:
+    paths:
+      - "environments/**"
+      - "modules/**"
+      - "policy/**"
+      - ".github/workflows/terraform-plan.yml"
+
+# Least privilege at the top; jobs elevate only what they need.
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-plan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  validate:
+    name: validate (${{ matrix.environment }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, staging, prod]
+    permissions:
+      contents: read
+      id-token: write          # OIDC token for azure/login
+      pull-requests: write     # sticky plan comment
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
+        with:
+          egress-policy: audit  # IaC plan needs the Azure + registry endpoints; audit then tighten
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: true
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4.1.1
+        with:
+          tflint_version: v0.54.0
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive
+
+      - name: terraform init (backend disabled)
+        working-directory: environments/${{ matrix.environment }}
+        run: terraform init -backend=false -input=false
+
+      - name: terraform validate
+        working-directory: environments/${{ matrix.environment }}
+        run: terraform validate -no-color
+
+      - name: tflint
+        run: |
+          tflint --init --config "$PWD/policy/.tflint.hcl"
+          tflint --recursive --config "$PWD/policy/.tflint.hcl" --format compact
+
+      - name: Trivy IaC + tfsec rules (SARIF)
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0
+        with:
+          scan-type: config
+          scan-ref: environments/${{ matrix.environment }}
+          format: sarif
+          output: trivy-${{ matrix.environment }}.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf # v12.2964.0
+        with:
+          directory: environments/${{ matrix.environment }}
+          config_file: policy/.checkov.yaml
+          quiet: true
+          soft_fail: false
+
+      - name: Azure login (OIDC)
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: terraform init
+        working-directory: environments/${{ matrix.environment }}
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform init -input=false
+
+      - name: terraform plan
+        id: plan
+        working-directory: environments/${{ matrix.environment }}
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_platform_admins_group_id: ${{ vars.PLATFORM_ADMINS_GROUP_ID }}
+          TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+        run: |
+          terraform plan -input=false -no-color -lock-timeout=120s \
+            -out=plan.tfplan | tee plan.txt
+          terraform show -json plan.tfplan > plan.json
+
+      - name: conftest (OPA policy on plan)
+        env:
+          CONFTEST_VERSION: "0.56.0"
+        run: |
+          curl -fsSL "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
+            | tar -xz conftest
+          ./conftest verify --policy policy/rego
+          ./conftest test --policy policy/rego environments/${{ matrix.environment }}/plan.json
+
+      - name: Detect Infracost key
+        id: infracost_key
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          if [ -n "${INFRACOST_API_KEY}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Infracost breakdown
+        if: steps.infracost_key.outputs.enabled == 'true'
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+          INFRACOST_VERSION: "0.10.39"
+        run: |
+          # Pinned-version install of the Infracost CLI (avoids a floating action).
+          curl -fsSL "https://github.com/infracost/infracost/releases/download/v${INFRACOST_VERSION}/infracost-linux-amd64.tar.gz" \
+            | tar -xz
+          ./infracost-linux-amd64 configure set api_key "${INFRACOST_API_KEY}"
+          ./infracost-linux-amd64 breakdown --path environments/${{ matrix.environment }} \
+            --format json --out-file infracost-${{ matrix.environment }}.json || true
+
+      - name: Sticky plan comment
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        with:
+          header: terraform-plan-${{ matrix.environment }}
+          message: |
+            ### Terraform plan — `${{ matrix.environment }}`
+
+            <details><summary>Show plan</summary>
+
+            ```hcl
+            ${{ steps.plan.outputs.stdout }}
+            ```
+
+            </details>
+
+            _tflint, tfsec/Trivy, checkov and conftest all passed._
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.27.5
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.environment }}.sarif
+          category: trivy-${{ matrix.environment }}

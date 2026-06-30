@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# In CI these are provided via TF_VAR_* env vars / GitHub Environment variables.
+
+subscription_id          = "00000000-0000-0000-0000-000000000000"
+location                 = "westeurope"
+environment              = "dev"
+name_prefix              = "aircloud"
+platform_admins_group_id = "11111111-1111-1111-1111-111111111111"
+github_repository        = "aircloud/template-terraform-azure"
+alert_email              = "platform-oncall@aircloud.com.pl"
+
+tags = {
+  cost-center = "platform-engineering"
+}

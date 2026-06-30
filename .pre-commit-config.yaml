@@ -1,0 +1,74 @@
+# Pre-commit hooks for template-terraform-azure.
+# Install: task setup  (or: pre-commit install --install-hooks)
+# Run all:  pre-commit run -a
+#
+# The org-wide reusable CI workflow (aircloud/.github .github/workflows/pre-commit.yml,
+# called from .github/workflows/ci.yml) runs these same hooks on every PR.
+minimum_pre_commit_version: "3.7.0"
+fail_fast: false
+
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.2
+    hooks:
+      - id: terraform_fmt
+
+      - id: terraform_validate
+        args:
+          # Validate each environment without touching the remote backend.
+          - --init-args=-backend=false
+        exclude: ^policy/
+
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/policy/.tflint.hcl
+
+      - id: terraform_docs
+        args:
+          - --args=--config=.terraform-docs.yml
+        files: ^modules/
+
+      - id: terraform_checkov
+        args:
+          - --args=--config-file=policy/.checkov.yaml
+
+      - id: terraform_trivy
+        args:
+          - --args=--config policy/tfsec.yaml
+
+  - repo: https://github.com/aquasecurity/tfsec
+    rev: v1.28.13
+    hooks:
+      - id: tfsec
+        args:
+          - --config-file=policy/tfsec.yaml
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        args:
+          - --config=.gitleaks.toml
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: check-yaml
+      - id: check-json
+      - id: detect-private-key
+      # Block accidental commits of state / real tfvars.
+      - id: check-added-large-files
+        args: ["--maxkb=2000"]
+
+  - repo: local
+    hooks:
+      - id: no-tfstate
+        name: block committing tfstate / real tfvars
+        entry: 'Do not commit *.tfstate*, *.tfvars (use *.tfvars.example), or plan.json'
+        language: fail
+        files: '(\.tfstate.*$)|(^(?!.*\.example$).*\.tfvars$)|(plan\.json$)'

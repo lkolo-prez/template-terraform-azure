@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Org-wide reusable pre-commit gate. Lives in aircloud/.github and is pinned by
+  # SHA like any other action. It runs the hooks declared in .pre-commit-config.yaml
+  # (terraform_fmt, terraform_validate, tflint, terraform_docs, checkov, tfsec, ...).
+  pre-commit:
+    name: pre-commit (reusable)
+    uses: aircloud/.github/.github/workflows/pre-commit.yml@3f5e8c2a1d9b7f6e4c3a2b1d0e9f8a7c6b5d4e3f # v1.4.0 — replace with released SHA of aircloud/.github
+    permissions:
+      contents: read
+    with:
+      python-version: "3.12"
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@3a24062651993d40fed1019b58ac6fbdfbf276cc # v2.0.0
+        with:
+          flags: "-color"
+
+  docs-check:
+    name: terraform-docs up to date
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: terraform-docs check (no diff)
+        uses: terraform-docs/gh-actions@aeae0038ed47a547e0c0fca5c059d3335f48fef8 # v1.3.0
+        with:
+          working-dir: modules/network,modules/aks,modules/identity,modules/keyvault,modules/acr,modules/observability
+          config-file: .terraform-docs.yml
+          output-method: inject
+          git-push: "false"
+          fail-on-diff: "true"
