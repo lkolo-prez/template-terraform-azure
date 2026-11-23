@@ -1,8 +1,12 @@
+<p align="center">
+  <a href="https://aircloud.com.pl"><img src=".github/assets/banner.png" alt="AIRCLOUD: DevOps, cloud and AI engineering" width="100%"></a>
+</p>
+
 # template-terraform-azure
 
-[![CI](https://github.com/aircloud/template-terraform-azure/actions/workflows/ci.yml/badge.svg)](https://github.com/aircloud/template-terraform-azure/actions/workflows/ci.yml)
-[![Terraform Plan](https://github.com/aircloud/template-terraform-azure/actions/workflows/terraform-plan.yml/badge.svg)](https://github.com/aircloud/template-terraform-azure/actions/workflows/terraform-plan.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aircloud/template-terraform-azure/badge)](https://scorecard.dev/viewer/?uri=github.com/aircloud/template-terraform-azure)
+**Security-first Azure IaC template: private AKS, Key Vault and ACR, deployed from GitHub Actions with OIDC and no long-lived cloud secrets.**
+
+[![CI](https://github.com/lkolo-prez/template-terraform-azure/actions/workflows/ci.yml/badge.svg)](https://github.com/lkolo-prez/template-terraform-azure/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 Opinionated, security-first **Azure Infrastructure-as-Code** template. It provisions a
@@ -25,7 +29,7 @@ to **GitHub Actions with OIDC** so there are **no long-lived cloud secrets**.
   (CycloneDX via Syft), keyless cosign signing, build-provenance attestation, OpenSSF
   Scorecard, Trivy/tfsec/checkov/conftest, gitleaks, CodeQL + Semgrep, dependency review.
 
-## Repository layout
+## What's inside
 
 ```
 modules/            Reusable, documented Terraform modules
@@ -53,7 +57,13 @@ docs/               Architecture (Mermaid), branch protection, runbooks
 | Task (go-task) | >= 3.38 |
 | pre-commit | >= 3.7 |
 
-## Quick start
+## Usage
+
+Create a new repository from this template (or use **Use this template** on GitHub):
+
+```bash
+gh repo create <your-org>/<name> --template lkolo-prez/template-terraform-azure --private --clone
+```
 
 ```bash
 # 0. One-time per org: create remote state + GitHub OIDC (see bootstrap/README.md)
@@ -94,3 +104,22 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the topology + OIDC trust d
 ## License
 
 [Apache-2.0](./LICENSE) — Copyright 2026 AirCloud.
+
+---
+
+## Part of the AIRCLOUD golden path
+
+| Repository | What it is |
+| --- | --- |
+| [00-engineering-standards](https://github.com/lkolo-prez/00-engineering-standards) | Golden paths, security baseline, AI-assistant policy (handbook) |
+| **template-terraform-azure** (this repo) | Terraform on Azure: private AKS, Key Vault, ACR, OIDC, policy-as-code |
+| [template-gitops-argocd](https://github.com/lkolo-prez/template-gitops-argocd) | Argo CD, Kustomize, Argo Rollouts, Kyverno, External Secrets |
+| [template-backend-python](https://github.com/lkolo-prez/template-backend-python) | FastAPI, Python 3.12, uv, ruff, pytest |
+| [template-backend-go](https://github.com/lkolo-prez/template-backend-go) | Go 1.23, chi, slog, OpenTelemetry, golangci-lint |
+| [template-backend-typescript](https://github.com/lkolo-prez/template-backend-typescript) | Node 22, TypeScript, Fastify 5, Zod, Vitest, pnpm |
+| [template-frontend-nextjs](https://github.com/lkolo-prez/template-frontend-nextjs) | Next.js 15, React 19, Tailwind v4, Playwright, Lighthouse CI |
+| [.github](https://github.com/lkolo-prez/.github) | Reusable CI/CD workflows and community-health defaults |
+
+Terraform modules for Azure: [AIRCLOUD-PL](https://github.com/AIRCLOUD-PL).
+
+Built and maintained by [AIRCLOUD](https://aircloud.com.pl): DevOps, cloud and AI engineering. Need help adopting the golden path? See [aircloud.com.pl/consulting](https://aircloud.com.pl/consulting).
