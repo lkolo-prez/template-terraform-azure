@@ -24,7 +24,10 @@ settings:
   hide-empty: false
   html: true
   indent: 2
-  lockfile: true
+  # Modules do not commit .terraform.lock.hcl; terraform validate creates one on
+  # the fly, so reading it made the provider column flip between the resolved
+  # version and the constraint. Always document the constraint.
+  lockfile: false
   read-comments: true
   required: true
   sensitive: true
