@@ -31,6 +31,11 @@ jobs:
   apply:
     name: apply (${{ matrix.environment }})
     runs-on: ubuntu-24.04
+    # Template default: skip until Azure OIDC is configured. To enable applies, set
+    # repository variables AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID
+    # (federated credential, no client secret), plus PLATFORM_ADMINS_GROUP_ID and
+    # ALERT_EMAIL, and create the dev/staging/prod GitHub Environments with reviewers.
+    if: vars.AZURE_CLIENT_ID != '' && vars.AZURE_TENANT_ID != '' && vars.AZURE_SUBSCRIPTION_ID != ''
     strategy:
       max-parallel: 1
       matrix:

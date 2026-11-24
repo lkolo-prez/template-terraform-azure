@@ -17,18 +17,13 @@ resource "azurerm_container_registry" "this" {
   network_rule_bypass_option    = "AzureServices"
 
   # Premium-only hardening.
-  zone_redundancy_enabled       = var.sku == "Premium"
-  export_policy_enabled         = var.sku == "Premium" ? false : true
-  data_endpoint_enabled         = var.sku == "Premium"
-  trust_policy_enabled          = var.sku == "Premium"
+  zone_redundancy_enabled = var.sku == "Premium"
+  export_policy_enabled   = var.sku == "Premium" ? false : true
+  data_endpoint_enabled   = var.sku == "Premium"
+  trust_policy_enabled    = var.sku == "Premium"
 
-  dynamic "retention_policy_in_days" {
-    for_each = var.sku == "Premium" ? [var.retention_days] : []
-    content {
-      enabled = true
-      days    = retention_policy_in_days.value
-    }
-  }
+  # azurerm 4.x: retention is a plain argument (the 3.x retention_policy block is gone).
+  retention_policy_in_days = var.sku == "Premium" ? var.retention_days : null
 
   identity {
     type = "SystemAssigned"

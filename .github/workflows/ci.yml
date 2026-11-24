@@ -13,16 +13,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Org-wide reusable pre-commit gate. Lives in aircloud/.github and is pinned by
-  # SHA like any other action. It runs the hooks declared in .pre-commit-config.yaml
-  # (terraform_fmt, terraform_validate, tflint, terraform_docs, checkov, tfsec, ...).
+  # pre-commit gate: runs the hooks declared in .pre-commit-config.yaml
+  # (terraform_fmt, terraform_validate, tflint, terraform_docs, checkov, trivy, tfsec,
+  # gitleaks, ...). It previously called a reusable workflow in aircloud/.github that
+  # does not exist (placeholder SHA), so GitHub rejected the whole workflow file.
+  # The pre-commit-terraform image bundles every tool the hooks need; pinned by digest.
   pre-commit:
-    name: pre-commit (reusable)
-    uses: aircloud/.github/.github/workflows/pre-commit.yml@3f5e8c2a1d9b7f6e4c3a2b1d0e9f8a7c6b5d4e3f # v1.4.0 — replace with released SHA of aircloud/.github
+    name: pre-commit
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
-    with:
-      python-version: "3.12"
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # gitleaks hook scans history
+
+      - name: Run pre-commit (all files)
+        env:
+          IMAGE: ghcr.io/antonbabenko/pre-commit-terraform:v1.96.2@sha256:01f870b7689b5a09c1a370914fcddcac42c4b6478c9d369e1d2590dd0a66ffd0
+        run: |
+          docker run --rm \
+            -e "USERID=$(id -u):$(id -g)" \
+            -v "${GITHUB_WORKSPACE}:/lint" -w /lint \
+            "${IMAGE}" run --all-files --show-diff-on-failure
 
   actionlint:
     name: actionlint

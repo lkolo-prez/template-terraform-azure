@@ -34,7 +34,10 @@ repos:
 
       - id: terraform_trivy
         args:
-          - --args=--config policy/tfsec.yaml
+          # policy/tfsec.yaml is a tfsec config (used by the tfsec hook below), not a
+          # Trivy config file, and the hook runs per directory, so the relative path
+          # never resolved. Use the same severity gate as terraform-plan.yml.
+          - --args=--severity=HIGH,CRITICAL
 
   - repo: https://github.com/aquasecurity/tfsec
     rev: v1.28.13

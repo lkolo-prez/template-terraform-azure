@@ -36,8 +36,8 @@ resource "azurerm_kubernetes_cluster" "this" {
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
 
-  image_cleaner_enabled        = true
-  image_cleaner_interval_hours = 48
+  image_cleaner_enabled             = true
+  image_cleaner_interval_hours      = 48
   role_based_access_control_enabled = true
 
   identity {
@@ -46,18 +46,18 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   default_node_pool {
-    name                        = "system"
-    vm_size                     = var.system_node_pool.vm_size
-    auto_scaling_enabled        = true
-    min_count                   = var.system_node_pool.min_count
-    max_count                   = var.system_node_pool.max_count
-    os_disk_size_gb             = var.system_node_pool.os_disk_size_gb
-    os_disk_type                = "Ephemeral"
+    name                         = "system"
+    vm_size                      = var.system_node_pool.vm_size
+    auto_scaling_enabled         = true
+    min_count                    = var.system_node_pool.min_count
+    max_count                    = var.system_node_pool.max_count
+    os_disk_size_gb              = var.system_node_pool.os_disk_size_gb
+    os_disk_type                 = "Ephemeral"
     only_critical_addons_enabled = var.system_node_pool.only_critical_addons
-    vnet_subnet_id              = var.subnet_id
-    zones                       = var.system_node_pool.zones
-    max_pods                    = 110
-    temporary_name_for_rotation = "systmp"
+    vnet_subnet_id               = var.subnet_id
+    zones                        = var.system_node_pool.zones
+    max_pods                     = 110
+    temporary_name_for_rotation  = "systmp"
 
     upgrade_settings {
       max_surge = "33%"
