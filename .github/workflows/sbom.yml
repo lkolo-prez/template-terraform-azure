@@ -48,7 +48,7 @@ jobs:
           retention-days: 90
 
       - name: Attest the SBOM
-        uses: actions/attest-sbom@bd218ad7dbfcef3e30b3f64a280da9c75d536f4d # v2.1.0
+        uses: actions/attest-sbom@cbfd0027ae731a5892db25ecd226930d7ffd19eb # v2.1.0
         with:
           subject-path: sbom.cdx.json
           sbom-path: sbom.cdx.json
