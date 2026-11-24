@@ -36,10 +36,13 @@ jobs:
 
       - name: Run pre-commit (all files)
         env:
+          # tflint --init downloads the azurerm ruleset from the GitHub API; an
+          # authenticated (read-only) token avoids the shared-runner rate limit.
+          GITHUB_TOKEN: ${{ github.token }}
           IMAGE: ghcr.io/antonbabenko/pre-commit-terraform:v1.96.2@sha256:01f870b7689b5a09c1a370914fcddcac42c4b6478c9d369e1d2590dd0a66ffd0
         run: |
           docker run --rm \
-            -e "USERID=$(id -u):$(id -g)" \
+            -e "USERID=$(id -u):$(id -g)" -e GITHUB_TOKEN \
             -v "${GITHUB_WORKSPACE}:/lint" -w /lint \
             "${IMAGE}" run --all-files --show-diff-on-failure
 
@@ -79,11 +82,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      # The gh-actions wrapper resolved .terraform-docs.yml relative to each module
+      # directory (not found, so it rendered with defaults and always diffed).
+      # Run terraform-docs 0.19.0 directly with the repo-root config instead.
       - name: terraform-docs check (no diff)
-        uses: terraform-docs/gh-actions@aeae0038ed47a547e0c0fca5c059d3335f48fb25 # v1.3.0
-        with:
-          working-dir: modules/network,modules/aks,modules/identity,modules/keyvault,modules/acr,modules/observability
-          config-file: .terraform-docs.yml
-          output-method: inject
-          git-push: "false"
-          fail-on-diff: "true"
+        env:
+          IMAGE: quay.io/terraform-docs/terraform-docs:0.19.0@sha256:d91005e55ad9e2f5a1c9cd7c78520414615ec150c922575887e94f5f5fe26c66
+        run: |
+          set -euo pipefail
+          for m in network aks identity keyvault acr observability; do
+            docker run --rm -u "$(id -u):$(id -g)" \
+              -v "${GITHUB_WORKSPACE}:/w" -w "/w/modules/${m}" \
+              "${IMAGE}" --config /w/.terraform-docs.yml .
+          done
+          if ! git diff --exit-code -- modules; then
+            echo "::error::terraform-docs tables are stale; run 'task docs' and commit."
+            exit 1
+          fi
