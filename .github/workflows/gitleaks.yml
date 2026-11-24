@@ -38,4 +38,8 @@ jobs:
       - name: gitleaks
         uses: gitleaks/gitleaks-action@83373cf2f8c4db6e24b41c1a9b086bb9619e9cd3 # v2.3.7
         env:
+          # Built-in token (not a stored secret). Without it the action's account
+          # lookup runs unauthenticated, hits the shared-IP rate limit and then
+          # demands a GITLEAKS_LICENSE, failing the scan intermittently.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
