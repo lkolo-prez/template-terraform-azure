@@ -5,9 +5,9 @@
 **Do not open a public issue, pull request, or discussion for security problems.**
 
 Report privately via GitHub Security Advisories:
-<https://github.com/aircloud/template-terraform-azure/security/advisories/new>
+<https://github.com/lkolo-prez/template-terraform-azure/security/advisories/new>
 
-If you cannot use GitHub Advisories, email **security@aircloud.com.pl** with a description,
+If you cannot use GitHub Advisories, email **office@aircloud.com.pl** with a description,
 affected paths/modules, and reproduction steps. Please **do not** include any secrets,
 subscription IDs, tenant IDs, or live `terraform plan`/state output in your report.
 
